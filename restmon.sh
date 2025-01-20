@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Base64-encoded username:password (use echo "username:password" | base64 to generate this)
-AUTH_CREDENTIALS="dXNlcm5hbWU6cGFzc3dvcmQ="
-
 # Function to get CPU usage
 get_cpu_usage() {
     top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1}'
@@ -54,28 +51,9 @@ get_services_status() {
     echo "{$service_statuses}"
 }
 
-# Function to check Basic Authentication
-check_auth() {
-    local auth_header=$1
-    if [ "$auth_header" != "Authorization: Basic $AUTH_CREDENTIALS" ]; then
-        echo "HTTP/1.1 401 Unauthorized"
-        echo "WWW-Authenticate: Basic realm=\"Restricted Area\""
-        echo
-        echo "Unauthorized"
-        return 1
-    fi
-    return 0
-}
-
 # Start a simple HTTP server using netcat
 while true; do
     request=$(nc -l -p 8080 -q 1)
-    auth_header=$(echo "$request" | grep "Authorization")
-
-    if ! check_auth "$auth_header"; then
-        continue
-    fi
-
     query_string=$(echo "$request" | grep "GET" | awk '{print $2}' | sed 's/\/\?//')
 
     if [[ $query_string == services* ]]; then
